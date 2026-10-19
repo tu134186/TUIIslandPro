@@ -7,6 +7,9 @@
 <dict><key>cell</key><string>PSSliderCell</string><key>label</key><string>素材比例</string><key>key</key><string>scale</string><key>default</key><real>1</real><key>min</key><real>0.5</real><key>max</key><real>1.5</real></dict>
 <dict><key>cell</key><string>PSSliderCell</string><key>label</key><string>水平位置</string><key>key</key><string>offsetX</string><key>default</key><real>0</real><key>min</key><real>-80</real><key>max</key><real>80</real></dict>
 <dict><key>cell</key><string>PSSliderCell</string><key>label</key><string>垂直位置</string><key>key</key><string>offsetY</string><key>default</key><real>0</real><key>min</key><real>-40</real><key>max</key><real>40</real></dict>
+<dict><key>cell</key><string>PSGroupCell</string><key>label</key><string>灵动光效 · 实验版</string></dict>
+<dict><key>cell</key><string>PSSwitchCell</string><key>label</key><string>青色光晕</string><key>key</key><string>glowEnabled</string><key>default</key><false/></dict>
+<dict><key>cell</key><string>PSSliderCell</string><key>label</key><string>光晕半径</string><key>key</key><string>glowRadius</string><key>default</key><real>8</real><key>min</key><real>0</real><key>max</key><real>25</real></dict>
 <dict><key>cell</key><string>PSGroupCell</string><key>footerText</key><string>V1.0.0 实验版：当前仅支持本地静态图片路径，尚无文件选择器。不要与 ios16dao 同时启用。GIF/MP4/光圈/左右动画尚未实现。</string></dict>
 <dict><key>cell</key><string>PSEditTextCell</string><key>label</key><string>图片绝对路径</string><key>key</key><string>imagePath</string><key>default</key><string></string></dict>
 </array></plist>
