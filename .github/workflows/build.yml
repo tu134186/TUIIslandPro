@@ -11,6 +11,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      - name: Initialize build diagnostics
+        run: echo "IslandPro build preflight" > build.log
       - name: Install toolchain
         run: |
           set -euo pipefail
@@ -25,17 +27,17 @@ jobs:
       - name: Validate source and preferences
         run: |
           set -euo pipefail
-          plutil -lint islandproprefs/Resources/Info.plist
-          plutil -lint islandproprefs/Resources/Root.plist
-          plutil -lint layout/Library/PreferenceLoader/Preferences/IslandPro.plist
-          plutil -lint IslandPro.plist
+          plutil -lint islandproprefs/Resources/Info.plist 2>&1 | tee -a build.log
+          plutil -lint islandproprefs/Resources/Root.plist 2>&1 | tee -a build.log
+          plutil -lint layout/Library/PreferenceLoader/Preferences/IslandPro.plist 2>&1 | tee -a build.log
+          plutil -lint IslandPro.plist 2>&1 | tee -a build.log
           test -s Tweak.xm && test -s control && test -s Makefile
       - name: Compile and package
         shell: bash
         run: |
           set -o pipefail
           export PATH="/opt/homebrew/opt/make/libexec/gnubin:$PATH"
-          make package FINALPACKAGE=1 messages=yes 2>&1 | tee build.log
+          make package FINALPACKAGE=1 messages=yes 2>&1 | tee -a build.log
       - name: Upload diagnostics
         if: always()
         uses: actions/upload-artifact@v4
