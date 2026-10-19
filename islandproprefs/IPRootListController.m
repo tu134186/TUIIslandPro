@@ -41,6 +41,19 @@ static NSString * const IPAssetPath = @"/var/mobile/Library/Preferences/com.tu.i
     if (access) [url stopAccessingSecurityScopedResource];
     // Decode and re-encode as PNG to avoid trusting arbitrary file extensions.
     UIImage *image = (data && data.length <= 20*1024*1024) ? [UIImage imageWithData:data] : nil;
+    // A tiny compressed photo can still expand into a huge bitmap.
+    CGSize size = image.size;
+    if (image && (size.width <= 0 || size.height <= 0 || size.width * size.height > 16000000.0)) image = nil;
+    // Normalize EXIF orientation and downsample to a reasonable island texture.
+    if (image) {
+        CGFloat ratio = MIN(1.0, 1024.0 / MAX(image.size.width, image.size.height));
+        CGSize target = CGSizeMake(MAX(1, round(image.size.width * ratio)), MAX(1, round(image.size.height * ratio)));
+        UIGraphicsBeginImageContextWithOptions(target, NO, 1.0);
+        [image drawInRect:CGRectMake(0, 0, target.width, target.height)];
+        UIImage *normalized = UIGraphicsGetImageFromCurrentImageContext();
+        UIGraphicsEndImageContext();
+        image = normalized;
+    }
     NSData *png = image ? UIImagePNGRepresentation(image) : nil;
     if (!png || png.length > 20*1024*1024) {
         UIAlertController *a = [UIAlertController alertControllerWithTitle:@"素材无法导入" message:@"请选择有效的静态图片，转换后不超过20MB。" preferredStyle:UIAlertControllerStyleAlert];
