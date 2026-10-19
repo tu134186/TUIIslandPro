@@ -47,6 +47,9 @@ static UIImage *IPImage(void) {
     // Only load user-selected files inside the mobile preferences directory.
     if (![gImagePath isEqualToString:kAsset]) { gCachedImage = nil; return nil; }
     gCachedImage = [UIImage imageWithContentsOfFile:gImagePath];
+    if (gCachedImage && (gCachedImage.size.width <= 0 || gCachedImage.size.height <= 0 || gCachedImage.size.width * gCachedImage.size.height > 16000000.0)) {
+        gCachedImage = nil;
+    }
     return gCachedImage;
 }
 static void IPUpdate(UIView *host) {
@@ -69,9 +72,14 @@ static void IPUpdate(UIView *host) {
     }
     if (overlay.image != image) overlay.image = image;
     overlay.alpha = gAlpha;
-    overlay.frame = CGRectMake((host.bounds.size.width * (1-gScale))/2 + gOffsetX,
-                               (host.bounds.size.height * (1-gScale))/2 + gOffsetY,
-                               host.bounds.size.width*gScale, host.bounds.size.height*gScale);
+    CGFloat width = host.bounds.size.width * gScale;
+    CGFloat height = host.bounds.size.height * gScale;
+    // Keep the material within a bounded size even when a third-party island expands the host.
+    width = MIN(width, 420.0);
+    height = MIN(height, 180.0);
+    overlay.frame = CGRectMake((host.bounds.size.width - width)/2 + gOffsetX,
+                               (host.bounds.size.height - height)/2 + gOffsetY,
+                               width, height);
     overlay.hidden = NO;
     overlay.layer.shadowColor = [UIColor cyanColor].CGColor;
     overlay.layer.shadowOpacity = gGlowEnabled ? 0.85f : 0.0f;
