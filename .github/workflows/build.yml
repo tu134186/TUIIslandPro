@@ -44,6 +44,8 @@ jobs:
           export PATH="/opt/homebrew/opt/make/libexec/gnubin:$PATH"
           make package FINALPACKAGE=1 messages=yes 2>&1 | tee -a build.log
           test -n "$(find packages -maxdepth 1 -name '*.deb' -print -quit)"
+          echo "Produced packages:" | tee -a build.log
+          find packages -maxdepth 1 -name '*.deb' -exec ls -lh {} \; | tee -a build.log
       - name: Upload diagnostics
         if: always()
         uses: actions/upload-artifact@v4
