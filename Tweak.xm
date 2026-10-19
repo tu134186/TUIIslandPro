@@ -5,6 +5,7 @@
 #import <CoreFoundation/CoreFoundation.h>
 
 static NSString * const kPrefs = @"/var/mobile/Library/Preferences/com.tu.islandpro.plist";
+static NSString * const kAsset = @"/var/mobile/Library/Preferences/com.tu.islandpro.asset.png";
 static char kOverlayKey;
 static BOOL gEnabled = NO;
 static CGFloat gAlpha = 1.0;
@@ -41,12 +42,12 @@ static UIImage *IPImage(void) {
     gNeedsRefresh = NO;
     gCachedPath = [gImagePath copy];
     // Only load user-selected files inside the mobile preferences directory.
-    if (![gImagePath hasPrefix:@"/var/mobile/Library/Preferences/"]) { gCachedImage = nil; return nil; }
+    if (![gImagePath isEqualToString:kAsset]) { gCachedImage = nil; return nil; }
     gCachedImage = [UIImage imageWithContentsOfFile:gImagePath];
     return gCachedImage;
 }
 static void IPUpdate(UIView *host) {
-    if (!host) return;
+    if (!host || host.bounds.size.width <= 0 || host.bounds.size.height <= 0) return;
     UIImageView *overlay = objc_getAssociatedObject(host, &kOverlayKey);
     if (!gEnabled || gImagePath.length == 0) { if (overlay) { overlay.hidden = YES; [overlay.layer removeAnimationForKey:@"ip.glow.pulse"]; } return; }
     UIImage *image = IPImage();
@@ -66,6 +67,7 @@ static void IPUpdate(UIView *host) {
                                host.bounds.size.width*gScale, host.bounds.size.height*gScale);
     overlay.hidden = NO;
     overlay.layer.shadowColor = [UIColor cyanColor].CGColor;
+    overlay.layer.shadowPath = nil;
     overlay.layer.shadowOpacity = gGlowEnabled ? 0.85f : 0.0f;
     overlay.layer.shadowRadius = gGlowRadius;
     overlay.layer.shadowOffset = CGSizeZero;
@@ -99,7 +101,10 @@ static void hookedLayout(id self, SEL cmd) {
 static void IPNotification(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo) {
     dispatch_async(dispatch_get_main_queue(), ^{
         IPReload();
-        for (UIView *host in gHosts.allObjects) IPUpdate(host);
+        for (UIView *host in gHosts.allObjects) {
+            if (!host.window) continue;
+            IPUpdate(host);
+        }
     });
 }
 __attribute__((constructor)) static void IPInit(void) {
