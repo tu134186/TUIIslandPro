@@ -44,7 +44,14 @@ static NSString * const IPAssetPath = @"/var/mobile/Library/Preferences/com.tu.i
     NSURL *url = urls.firstObject;
     if (!url) return;
     BOOL access = [url startAccessingSecurityScopedResource];
-    NSData *data = [NSData dataWithContentsOfURL:url options:NSDataReadingMappedIfSafe error:nil];
+    NSNumber *fileSize = nil;
+    NSError *sizeError = nil;
+    [url getResourceValue:&fileSize forKey:NSURLFileSizeKey error:&sizeError];
+    NSData *data = nil;
+    if (!sizeError && fileSize && fileSize.unsignedLongLongValue > 0 &&
+        fileSize.unsignedLongLongValue <= 20ULL * 1024ULL * 1024ULL) {
+        data = [NSData dataWithContentsOfURL:url options:NSDataReadingMappedIfSafe error:nil];
+    }
     if (access) [url stopAccessingSecurityScopedResource];
     // Read image metadata before decoding; a small compressed file may have huge dimensions.
     UIImage *image = nil;
