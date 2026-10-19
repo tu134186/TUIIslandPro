@@ -20,6 +20,7 @@ static NSHashTable<UIView *> *gHosts;
 static UIImage *gCachedImage;
 static NSString *gCachedPath;
 static BOOL gNeedsRefresh = YES;
+static BOOL gInsideLayoutHook = NO;
 
 static void IPReload(void) {
     NSDictionary *p = [NSDictionary dictionaryWithContentsOfFile:kPrefs] ?: @{};
@@ -98,10 +99,16 @@ static void IPUpdate(UIView *host) {
 static void (*originalLayout)(id,SEL);
 static void hookedLayout(id self, SEL cmd) {
     if (originalLayout) originalLayout(self,cmd);
-    UIView *host = (UIView *)self;
-    if (!gHosts) gHosts = [NSHashTable weakObjectsHashTable];
-    [gHosts addObject:host];
-    IPUpdate(host);
+    if (gInsideLayoutHook) return;
+    gInsideLayoutHook = YES;
+    @try {
+        UIView *host = (UIView *)self;
+        if (!gHosts) gHosts = [NSHashTable weakObjectsHashTable];
+        [gHosts addObject:host];
+        IPUpdate(host);
+    } @finally {
+        gInsideLayoutHook = NO;
+    }
 }
 static void IPNotification(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo) {
     dispatch_async(dispatch_get_main_queue(), ^{
