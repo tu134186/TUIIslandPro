@@ -13,6 +13,7 @@ static CGFloat gOffsetX = 0.0;
 static CGFloat gOffsetY = 0.0;
 static BOOL gGlowEnabled = NO;
 static CGFloat gGlowRadius = 8.0;
+static BOOL gGlowPulse = NO;
 static NSString *gImagePath = nil;
 static NSHashTable<UIView *> *gHosts;
 static UIImage *gCachedImage;
@@ -29,6 +30,7 @@ static void IPReload(void) {
     gOffsetY = p[@"offsetY"] ? MAX(-40.0, MIN(40.0, [p[@"offsetY"] doubleValue])) : 0.0;
     gGlowEnabled = [p[@"glowEnabled"] boolValue];
     gGlowRadius = p[@"glowRadius"] ? MAX(0.0, MIN(25.0, [p[@"glowRadius"] doubleValue])) : 8.0;
+    gGlowPulse = [p[@"glowPulse"] boolValue];
     NSString *s = p[@"imagePath"];
     gImagePath = [s isKindOfClass:[NSString class]] ? [s copy] : nil;
     gNeedsRefresh = YES;
@@ -45,9 +47,9 @@ static UIImage *IPImage(void) {
 static void IPUpdate(UIView *host) {
     if (!host) return;
     UIImageView *overlay = objc_getAssociatedObject(host, &kOverlayKey);
-    if (!gEnabled || gImagePath.length == 0) { if (overlay) overlay.hidden = YES; return; }
+    if (!gEnabled || gImagePath.length == 0) { if (overlay) { overlay.hidden = YES; [overlay.layer removeAnimationForKey:@"ip.glow.pulse"]; } return; }
     UIImage *image = IPImage();
-    if (!image) { if (overlay) overlay.hidden = YES; return; }
+    if (!image) { if (overlay) { overlay.hidden = YES; [overlay.layer removeAnimationForKey:@"ip.glow.pulse"]; } return; }
     if (!overlay) {
         overlay = [[UIImageView alloc] initWithFrame:CGRectZero];
         overlay.userInteractionEnabled = NO;
@@ -66,6 +68,21 @@ static void IPUpdate(UIView *host) {
     overlay.layer.shadowOpacity = gGlowEnabled ? 0.85f : 0.0f;
     overlay.layer.shadowRadius = gGlowRadius;
     overlay.layer.shadowOffset = CGSizeZero;
+    BOOL animateGlow = gEnabled && gGlowEnabled && gGlowPulse && !UIAccessibilityIsReduceMotionEnabled();
+    if (animateGlow) {
+        if (![overlay.layer animationForKey:@"ip.glow.pulse"]) {
+            CABasicAnimation *pulse = [CABasicAnimation animationWithKeyPath:@"shadowOpacity"];
+            pulse.fromValue = @(0.25);
+            pulse.toValue = @(0.85);
+            pulse.duration = 1.25;
+            pulse.autoreverses = YES;
+            pulse.repeatCount = HUGE_VALF;
+            pulse.removedOnCompletion = NO;
+            [overlay.layer addAnimation:pulse forKey:@"ip.glow.pulse"];
+        }
+    } else {
+        [overlay.layer removeAnimationForKey:@"ip.glow.pulse"];
+    }
     overlay.layer.masksToBounds = NO;
     overlay.clipsToBounds = NO;
     if (overlay.superview != host) [host addSubview:overlay];
