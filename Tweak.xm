@@ -4,12 +4,13 @@
 #import <substrate.h>
 #import <CoreFoundation/CoreFoundation.h>
 
-static NSString * const kPrefs = @"/var/jb/var/mobile/Library/Preferences/com.tu.islandpro.plist";
+static NSString * const kPrefs = @"/var/mobile/Library/Preferences/com.tu.islandpro.plist";
 static char kOverlayKey;
 static BOOL gEnabled = NO;
 static CGFloat gAlpha = 1.0;
 static CGFloat gScale = 1.0;
 static NSString *gImagePath = nil;
+static NSHashTable<UIView *> *gHosts;
 
 static void IPReload(void) {
     NSDictionary *p = [NSDictionary dictionaryWithContentsOfFile:kPrefs] ?: @{};
@@ -22,9 +23,9 @@ static void IPReload(void) {
 static void IPUpdate(UIView *host) {
     if (!host) return;
     UIImageView *overlay = objc_getAssociatedObject(host, &kOverlayKey);
-    if (!gEnabled || gImagePath.length == 0) { overlay.hidden = YES; return; }
+    if (!gEnabled || gImagePath.length == 0) { if (overlay) overlay.hidden = YES; return; }
     UIImage *image = [UIImage imageWithContentsOfFile:gImagePath];
-    if (!image) { overlay.hidden = YES; return; }
+    if (!image) { if (overlay) overlay.hidden = YES; return; }
     if (!overlay) {
         overlay = [[UIImageView alloc] initWithFrame:CGRectZero];
         overlay.userInteractionEnabled = NO;
@@ -37,32 +38,28 @@ static void IPUpdate(UIView *host) {
     overlay.alpha = gAlpha;
     overlay.frame = CGRectMake((host.bounds.size.width * (1-gScale))/2,
                                (host.bounds.size.height * (1-gScale))/2,
-                               host.bounds.size.width*gScale,host.bounds.size.height*gScale);
+                               host.bounds.size.width*gScale, host.bounds.size.height*gScale);
     overlay.hidden = NO;
 }
 static void (*originalLayout)(id,SEL);
 static void hookedLayout(id self, SEL cmd) {
-    originalLayout(self,cmd);
-    IPUpdate((UIView *)self);
+    if (originalLayout) originalLayout(self,cmd);
+    UIView *host = (UIView *)self;
+    if (!gHosts) gHosts = [NSHashTable weakObjectsHashTable];
+    [gHosts addObject:host];
+    IPUpdate(host);
 }
 static void IPNotification(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo) {
     dispatch_async(dispatch_get_main_queue(), ^{
         IPReload();
-        for (UIWindow *window in [UIApplication sharedApplication].windows) {
-            NSMutableArray<UIView *> *pending = [NSMutableArray arrayWithObject:window];
-            while (pending.count) {
-                UIView *v = pending.lastObject; [pending removeLastObject];
-                if ([NSStringFromClass(v.class) isEqualToString:@"SBSystemApertureContainerView"]) IPUpdate(v);
-                [pending addObjectsFromArray:v.subviews];
-            }
-        }
+        for (UIView *host in gHosts.allObjects) IPUpdate(host);
     });
 }
 __attribute__((constructor)) static void IPInit(void) {
     @autoreleasepool {
         IPReload();
         Class c = objc_getClass("SBSystemApertureContainerView");
-        if (c) {
+        if (c && [c instancesRespondToSelector:@selector(layoutSubviews)]) {
             MSHookMessageEx(c, @selector(layoutSubviews), (IMP)hookedLayout, (IMP *)&originalLayout);
         }
         CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, IPNotification,
