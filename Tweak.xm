@@ -18,7 +18,6 @@ static NSString *gImagePath = nil;
 static NSHashTable<UIView *> *gHosts;
 static UIImage *gCachedImage;
 static NSString *gCachedPath;
-static NSDate *gCachedModification;
 static BOOL gNeedsRefresh = YES;
 
 static void IPReload(void) {
@@ -36,11 +35,13 @@ static void IPReload(void) {
     gNeedsRefresh = YES;
 }
 static UIImage *IPImage(void) {
-    if (gImagePath.length == 0) return nil;
+    if (gImagePath.length == 0) { gCachedImage = nil; gCachedPath = nil; return nil; }
     // Never decode image data on every layoutSubviews callback.
     if (!gNeedsRefresh && [gCachedPath isEqualToString:gImagePath]) return gCachedImage;
     gNeedsRefresh = NO;
     gCachedPath = [gImagePath copy];
+    // Only load user-selected files inside the mobile preferences directory.
+    if (![gImagePath hasPrefix:@"/var/mobile/Library/Preferences/"]) { gCachedImage = nil; return nil; }
     gCachedImage = [UIImage imageWithContentsOfFile:gImagePath];
     return gCachedImage;
 }
