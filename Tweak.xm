@@ -9,6 +9,8 @@ static char kOverlayKey;
 static BOOL gEnabled = NO;
 static CGFloat gAlpha = 1.0;
 static CGFloat gScale = 1.0;
+static CGFloat gOffsetX = 0.0;
+static CGFloat gOffsetY = 0.0;
 static NSString *gImagePath = nil;
 static NSHashTable<UIView *> *gHosts;
 static UIImage *gCachedImage;
@@ -21,6 +23,8 @@ static void IPReload(void) {
     gEnabled = [p[@"enabled"] boolValue];
     gAlpha = p[@"opacity"] ? MAX(0.0, MIN(1.0, [p[@"opacity"] doubleValue])) : 1.0;
     gScale = p[@"scale"] ? MAX(0.5, MIN(1.5, [p[@"scale"] doubleValue])) : 1.0;
+    gOffsetX = p[@"offsetX"] ? MAX(-80.0, MIN(80.0, [p[@"offsetX"] doubleValue])) : 0.0;
+    gOffsetY = p[@"offsetY"] ? MAX(-40.0, MIN(40.0, [p[@"offsetY"] doubleValue])) : 0.0;
     NSString *s = p[@"imagePath"];
     gImagePath = [s isKindOfClass:[NSString class]] ? [s copy] : nil;
     gNeedsRefresh = YES;
@@ -50,8 +54,8 @@ static void IPUpdate(UIView *host) {
     }
     if (overlay.image != image) overlay.image = image;
     overlay.alpha = gAlpha;
-    overlay.frame = CGRectMake((host.bounds.size.width * (1-gScale))/2,
-                               (host.bounds.size.height * (1-gScale))/2,
+    overlay.frame = CGRectMake((host.bounds.size.width * (1-gScale))/2 + gOffsetX,
+                               (host.bounds.size.height * (1-gScale))/2 + gOffsetY,
                                host.bounds.size.width*gScale, host.bounds.size.height*gScale);
     overlay.hidden = NO;
     if (overlay.superview != host) [host addSubview:overlay];
