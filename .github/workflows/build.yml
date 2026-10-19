@@ -19,6 +19,12 @@ jobs:
             rm -rf "$HOME/theos/sdks"
             git clone --depth=1 https://github.com/theos/sdks.git "$HOME/theos/sdks"
           fi
+      - name: Validate project resources
+        run: |
+          plutil -lint islandproprefs/Resources/Info.plist
+          plutil -lint islandproprefs/Resources/Root.plist
+          plutil -lint layout/Library/PreferenceLoader/Preferences/IslandPro.plist
+          test -f Tweak.xm && test -f IslandPro.plist && test -f control
       - name: Compile DEB
         run: |
           export PATH="/opt/homebrew/opt/make/libexec/gnubin:$PATH"
