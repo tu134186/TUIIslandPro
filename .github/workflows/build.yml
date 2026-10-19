@@ -32,6 +32,18 @@ jobs:
           plutil -lint islandproprefs/Resources/Root.plist 2>&1 | tee -a build.log
           plutil -lint layout/Library/PreferenceLoader/Preferences/IslandPro.plist 2>&1 | tee -a build.log
           plutil -lint IslandPro.plist 2>&1 | tee -a build.log
+          /usr/bin/python3 - <<'PY' 2>&1 | tee -a build.log
+          import plistlib
+          from pathlib import Path
+          root = plistlib.loads(Path("islandproprefs/Resources/Root.plist").read_bytes())
+          keys = [item.get("key") for item in root if item.get("key")]
+          assert len(keys) == len(set(keys)), "Duplicate preference keys"
+          for item in root:
+              if item.get("cell") in ("PSSwitchCell", "PSSliderCell"):
+                  assert item.get("get") == "readPreferenceValue:", item
+                  assert item.get("set") == "setPreferenceValue:specifier:", item
+          print("Preference controls and keys: OK")
+          PY
           test -s Tweak.xm && test -s control && test -s Makefile
           test -s islandproprefs/IPRootListController.m
           test -s islandproprefs/Makefile
