@@ -1,7 +1,7 @@
 include $(THEOS)/makefiles/common.mk
 BUNDLE_NAME = IslandProPrefs
 IslandProPrefs_FILES = IPRootListController.m
-IslandProPrefs_FRAMEWORKS = UIKit
+IslandProPrefs_FRAMEWORKS = UIKit UniformTypeIdentifiers
 IslandProPrefs_PRIVATE_FRAMEWORKS = Preferences
 IslandProPrefs_INSTALL_PATH = /Library/PreferenceBundles
 IslandProPrefs_CFLAGS = -fobjc-arc
