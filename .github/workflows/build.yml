@@ -8,28 +8,43 @@ permissions:
 jobs:
   build:
     runs-on: macos-15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - name: Install Theos and SDK
+      - name: Install toolchain
         run: |
+          set -euo pipefail
           brew install ldid make
           git clone --recursive --depth=1 https://github.com/theos/theos.git "$HOME/theos"
           echo "THEOS=$HOME/theos" >> "$GITHUB_ENV"
-          if [ ! -d "$HOME/theos/sdks" ] || [ -z "$(ls -A "$HOME/theos/sdks" 2>/dev/null)" ]; then
+          if ! find "$HOME/theos/sdks" -maxdepth 1 -type d -name 'iPhoneOS*.sdk' 2>/dev/null | grep -q .; then
             rm -rf "$HOME/theos/sdks"
             git clone --depth=1 https://github.com/theos/sdks.git "$HOME/theos/sdks"
           fi
-      - name: Validate project resources
+          find "$HOME/theos/sdks" -maxdepth 1 -name 'iPhoneOS*.sdk' -print
+      - name: Validate source and preferences
         run: |
+          set -euo pipefail
           plutil -lint islandproprefs/Resources/Info.plist
           plutil -lint islandproprefs/Resources/Root.plist
           plutil -lint layout/Library/PreferenceLoader/Preferences/IslandPro.plist
-          test -f Tweak.xm && test -f IslandPro.plist && test -f control
-      - name: Compile DEB
+          plutil -lint IslandPro.plist
+          test -s Tweak.xm && test -s control && test -s Makefile
+      - name: Compile and package
+        shell: bash
         run: |
+          set -o pipefail
           export PATH="/opt/homebrew/opt/make/libexec/gnubin:$PATH"
-          make package FINALPACKAGE=1
+          make package FINALPACKAGE=1 messages=yes 2>&1 | tee build.log
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: IslandPro-Build-Logs
+          path: build.log
+          if-no-files-found: warn
       - name: Upload DEB
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: IslandPro-DEB
