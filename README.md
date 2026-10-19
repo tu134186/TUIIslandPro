@@ -24,3 +24,8 @@
 - 安装前建议备份环境；不要与 `ios16dao` 同时启用
 
 仅包含独立编写源码，不包含第三方原始 dylib。所有构建配置只作用于此仓库。
+
+## 当前素材约束
+- 静态图片必须通过设置页的系统文件选择器导入；不再提供手动输入任意路径。
+- SpringBoard 只读取 `/var/mobile/Library/Preferences/com.tu.islandpro.asset.png`。
+- 默认关闭覆盖功能，避免未经验证的注入立即改变系统界面。
