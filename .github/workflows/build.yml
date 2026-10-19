@@ -16,12 +16,12 @@ jobs:
       - name: Install toolchain
         run: |
           set -euo pipefail
-          brew install ldid make
-          git clone --recursive --depth=1 https://github.com/theos/theos.git "$HOME/theos"
+          brew install ldid make 2>&1 | tee -a build.log
+          git clone --recursive --depth=1 https://github.com/theos/theos.git "$HOME/theos" 2>&1 | tee -a build.log
           echo "THEOS=$HOME/theos" >> "$GITHUB_ENV"
           if ! find "$HOME/theos/sdks" -maxdepth 1 -type d -name 'iPhoneOS*.sdk' 2>/dev/null | grep -q .; then
             rm -rf "$HOME/theos/sdks"
-            git clone --depth=1 https://github.com/theos/sdks.git "$HOME/theos/sdks"
+            git clone --depth=1 https://github.com/theos/sdks.git "$HOME/theos/sdks" 2>&1 | tee -a build.log
           fi
           find "$HOME/theos/sdks" -maxdepth 1 -name 'iPhoneOS*.sdk' -print
       - name: Validate source and preferences
