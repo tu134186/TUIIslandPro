@@ -9,11 +9,11 @@
     return _specifiers;
 }
 - (id)readPreferenceValue:(PSSpecifier *)specifier {
-    NSDictionary *p = [NSDictionary dictionaryWithContentsOfFile:@"/var/jb/var/mobile/Library/Preferences/com.tu.islandpro.plist"];
+    NSDictionary *p = [NSDictionary dictionaryWithContentsOfFile:@"/var/mobile/Library/Preferences/com.tu.islandpro.plist"];
     return p[[specifier propertyForKey:@"key"]] ?: [specifier propertyForKey:@"default"];
 }
 - (void)setPreferenceValue:(id)value specifier:(PSSpecifier *)specifier {
-    NSString *path = @"/var/jb/var/mobile/Library/Preferences/com.tu.islandpro.plist";
+    NSString *path = @"/var/mobile/Library/Preferences/com.tu.islandpro.plist";
     NSMutableDictionary *p = [[NSDictionary dictionaryWithContentsOfFile:path] mutableCopy] ?: [NSMutableDictionary dictionary];
     NSString *key = [specifier propertyForKey:@"key"];
     if (key && value) p[key] = value;
