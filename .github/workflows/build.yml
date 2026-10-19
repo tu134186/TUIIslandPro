@@ -33,10 +33,14 @@ jobs:
           plutil -lint layout/Library/PreferenceLoader/Preferences/IslandPro.plist 2>&1 | tee -a build.log
           plutil -lint IslandPro.plist 2>&1 | tee -a build.log
           test -s Tweak.xm && test -s control && test -s Makefile
+          test -s islandproprefs/IPRootListController.m
+          test -s islandproprefs/Makefile
+          grep -q "THEOS_PACKAGE_SCHEME := rootless" Makefile
+          grep -q "Architecture: iphoneos-arm64" control
       - name: Compile and package
         shell: bash
         run: |
-          set -o pipefail
+          set -euo pipefail
           export PATH="/opt/homebrew/opt/make/libexec/gnubin:$PATH"
           make package FINALPACKAGE=1 messages=yes 2>&1 | tee -a build.log
           test -n "$(find packages -maxdepth 1 -name '*.deb' -print -quit)"
