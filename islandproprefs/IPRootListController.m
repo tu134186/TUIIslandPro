@@ -3,6 +3,7 @@
 #import <Preferences/PSListController.h>
 #import <Preferences/PSSpecifier.h>
 #import <CoreFoundation/CoreFoundation.h>
+#import <ImageIO/ImageIO.h>
 
 static NSString * const IPPrefsPath = @"/var/mobile/Library/Preferences/com.tu.islandpro.plist";
 static NSString * const IPAssetPath = @"/var/mobile/Library/Preferences/com.tu.islandpro.asset";
@@ -45,20 +46,30 @@ static NSString * const IPAssetPath = @"/var/mobile/Library/Preferences/com.tu.i
     BOOL access = [url startAccessingSecurityScopedResource];
     NSData *data = [NSData dataWithContentsOfURL:url options:NSDataReadingMappedIfSafe error:nil];
     if (access) [url stopAccessingSecurityScopedResource];
-    // Decode and re-encode as PNG to avoid trusting arbitrary file extensions.
-    UIImage *image = (data && data.length <= 20*1024*1024) ? [UIImage imageWithData:data] : nil;
-    // A tiny compressed photo can still expand into a huge bitmap.
-    CGSize size = image.size;
-    if (image && (size.width <= 0 || size.height <= 0 || size.width * size.height > 16000000.0)) image = nil;
-    // Normalize EXIF orientation and downsample to a reasonable island texture.
-    if (image) {
-        CGFloat ratio = MIN(1.0, 1024.0 / MAX(image.size.width, image.size.height));
-        CGSize target = CGSizeMake(MAX(1, round(image.size.width * ratio)), MAX(1, round(image.size.height * ratio)));
-        UIGraphicsBeginImageContextWithOptions(target, NO, 1.0);
-        [image drawInRect:CGRectMake(0, 0, target.width, target.height)];
-        UIImage *normalized = UIGraphicsGetImageFromCurrentImageContext();
-        UIGraphicsEndImageContext();
-        image = normalized;
+    // Read image metadata before decoding; a small compressed file may have huge dimensions.
+    UIImage *image = nil;
+    if (data.length > 0 && data.length <= 20 * 1024 * 1024) {
+        CGImageSourceRef source = CGImageSourceCreateWithData((__bridge CFDataRef)data, NULL);
+        if (source) {
+            NSDictionary *properties = CFBridgingRelease(CGImageSourceCopyPropertiesAtIndex(source, 0, NULL));
+            NSNumber *w = properties[(NSString *)kCGImagePropertyPixelWidth];
+            NSNumber *h = properties[(NSString *)kCGImagePropertyPixelHeight];
+            double width = w.doubleValue, height = h.doubleValue;
+            if (width > 0 && height > 0 && width * height <= 16000000.0) {
+                NSDictionary *options = @{
+                    (NSString *)kCGImageSourceCreateThumbnailFromImageAlways: @YES,
+                    (NSString *)kCGImageSourceCreateThumbnailWithTransform: @YES,
+                    (NSString *)kCGImageSourceThumbnailMaxPixelSize: @1024,
+                    (NSString *)kCGImageSourceShouldCacheImmediately: @YES
+                };
+                CGImageRef thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, (__bridge CFDictionaryRef)options);
+                if (thumbnail) {
+                    image = [UIImage imageWithCGImage:thumbnail];
+                    CGImageRelease(thumbnail);
+                }
+            }
+            CFRelease(source);
+        }
     }
     NSData *png = image ? UIImagePNGRepresentation(image) : nil;
     if (!png || png.length > 20*1024*1024) {
