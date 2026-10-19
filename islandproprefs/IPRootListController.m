@@ -40,7 +40,7 @@ static NSString * const IPAssetPath = @"/var/mobile/Library/Preferences/com.tu.i
     NSData *data = [NSData dataWithContentsOfURL:url options:NSDataReadingMappedIfSafe error:nil];
     if (access) [url stopAccessingSecurityScopedResource];
     // Decode and re-encode as PNG to avoid trusting arbitrary file extensions.
-    UIImage *image = data ? [UIImage imageWithData:data] : nil;
+    UIImage *image = (data && data.length <= 20*1024*1024) ? [UIImage imageWithData:data] : nil;
     NSData *png = image ? UIImagePNGRepresentation(image) : nil;
     if (!png || png.length > 20*1024*1024) {
         UIAlertController *a = [UIAlertController alertControllerWithTitle:@"素材无法导入" message:@"请选择有效的静态图片，转换后不超过20MB。" preferredStyle:UIAlertControllerStyleAlert];
@@ -49,7 +49,12 @@ static NSString * const IPAssetPath = @"/var/mobile/Library/Preferences/com.tu.i
         return;
     }
     NSString *path = [IPAssetPath stringByAppendingString:@".png"];
-    if (![png writeToFile:path atomically:YES]) return;
+    if (![png writeToFile:path atomically:YES]) {
+        UIAlertController *a = [UIAlertController alertControllerWithTitle:@"保存失败" message:@"无法写入本机素材目录。" preferredStyle:UIAlertControllerStyleAlert];
+        [a addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil]];
+        [self presentViewController:a animated:YES completion:nil];
+        return;
+    }
     NSMutableDictionary *p = [[NSDictionary dictionaryWithContentsOfFile:IPPrefsPath] mutableCopy] ?: [NSMutableDictionary dictionary];
     p[@"imagePath"] = path;
     [p writeToFile:IPPrefsPath atomically:YES];
