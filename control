@@ -1,0 +1,9 @@
+Package: com.tu.islandpro
+Name: 灵动岛 Pro
+Version: 1.0.0
+Architecture: iphoneos-arm64
+Description: SystemAperture island custom image prototype (experimental)
+Maintainer: TU
+Author: TU
+Section: Tweaks
+Depends: mobilesubstrate, preferenceloader
