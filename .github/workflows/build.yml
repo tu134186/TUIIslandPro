@@ -14,6 +14,7 @@ jobs:
       - name: Initialize build diagnostics
         run: echo "IslandPro build preflight" > build.log
       - name: Install toolchain
+        shell: bash
         run: |
           set -euo pipefail
           brew install ldid make dpkg 2>&1 | tee -a build.log
@@ -26,24 +27,14 @@ jobs:
           find "$HOME/theos/sdks" -maxdepth 1 -name 'iPhoneOS*.sdk' -print | tee -a build.log
           test -n "$(find "$HOME/theos/sdks" -maxdepth 1 -name 'iPhoneOS*.sdk' -print -quit)"
       - name: Validate source and preferences
+        shell: bash
         run: |
           set -euo pipefail
           plutil -lint islandproprefs/Resources/Info.plist 2>&1 | tee -a build.log
           plutil -lint islandproprefs/Resources/Root.plist 2>&1 | tee -a build.log
           plutil -lint layout/Library/PreferenceLoader/Preferences/IslandPro.plist 2>&1 | tee -a build.log
           plutil -lint IslandPro.plist 2>&1 | tee -a build.log
-          /usr/bin/python3 - <<'PY' 2>&1 | tee -a build.log
-          import plistlib
-          from pathlib import Path
-          root = plistlib.loads(Path("islandproprefs/Resources/Root.plist").read_bytes())
-          keys = [item.get("key") for item in root if item.get("key")]
-          assert len(keys) == len(set(keys)), "Duplicate preference keys"
-          for item in root:
-              if item.get("cell") in ("PSSwitchCell", "PSSliderCell"):
-                  assert item.get("get") == "readPreferenceValue:", item
-                  assert item.get("set") == "setPreferenceValue:specifier:", item
-          print("Preference controls and keys: OK")
-          PY
+          /usr/bin/python3 -c 'import plistlib; from pathlib import Path; root=plistlib.loads(Path("islandproprefs/Resources/Root.plist").read_bytes()); keys=[x["key"] for x in root if "key" in x]; assert len(keys)==len(set(keys)), "duplicate preference keys"; assert all(x.get("get")=="readPreferenceValue:" and x.get("set")=="setPreferenceValue:specifier:" for x in root if x.get("cell") in ("PSSwitchCell","PSSliderCell")); print("Preference controls OK")' 2>&1 | tee -a build.log
           test -s Tweak.xm && test -s control && test -s Makefile
           test -s islandproprefs/IPRootListController.m
           test -s islandproprefs/Makefile
@@ -61,54 +52,10 @@ jobs:
             test -s "$deb"
             dpkg-deb --info "$deb" 2>&1 | tee -a build.log
             dpkg-deb --contents "$deb" 2>&1 | tee -a build.log
-            dpkg-deb --contents "$deb" | grep -q 'IslandProPrefs.bundle/Root.plist
-      - name: Upload diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: IslandPro-Build-Logs
-          path: build.log
-          if-no-files-found: warn
-      - name: Upload DEB
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: IslandPro-DEB
-          path: packages/*.deb
-          if-no-files-found: error
-
-            dpkg-deb --contents "$deb" | grep -q 'IslandProPrefs.bundle/Info.plist
-      - name: Upload diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: IslandPro-Build-Logs
-          path: build.log
-          if-no-files-found: warn
-      - name: Upload DEB
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: IslandPro-DEB
-          path: packages/*.deb
-          if-no-files-found: error
-
-            dpkg-deb --contents "$deb" | grep -q 'IslandPro.dylib
-      - name: Upload diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: IslandPro-Build-Logs
-          path: build.log
-          if-no-files-found: warn
-      - name: Upload DEB
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: IslandPro-DEB
-          path: packages/*.deb
-          if-no-files-found: error
-
+            contents="$(dpkg-deb --contents "$deb")"
+            grep -q 'IslandProPrefs.bundle/Root.plist' <<< "$contents"
+            grep -q 'IslandProPrefs.bundle/Info.plist' <<< "$contents"
+            grep -q 'IslandPro.dylib' <<< "$contents"
             ls -lh "$deb" | tee -a build.log
           done
       - name: Upload diagnostics
