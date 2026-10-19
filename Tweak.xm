@@ -11,6 +11,8 @@ static CGFloat gAlpha = 1.0;
 static CGFloat gScale = 1.0;
 static CGFloat gOffsetX = 0.0;
 static CGFloat gOffsetY = 0.0;
+static BOOL gGlowEnabled = NO;
+static CGFloat gGlowRadius = 8.0;
 static NSString *gImagePath = nil;
 static NSHashTable<UIView *> *gHosts;
 static UIImage *gCachedImage;
@@ -25,6 +27,8 @@ static void IPReload(void) {
     gScale = p[@"scale"] ? MAX(0.5, MIN(1.5, [p[@"scale"] doubleValue])) : 1.0;
     gOffsetX = p[@"offsetX"] ? MAX(-80.0, MIN(80.0, [p[@"offsetX"] doubleValue])) : 0.0;
     gOffsetY = p[@"offsetY"] ? MAX(-40.0, MIN(40.0, [p[@"offsetY"] doubleValue])) : 0.0;
+    gGlowEnabled = [p[@"glowEnabled"] boolValue];
+    gGlowRadius = p[@"glowRadius"] ? MAX(0.0, MIN(25.0, [p[@"glowRadius"] doubleValue])) : 8.0;
     NSString *s = p[@"imagePath"];
     gImagePath = [s isKindOfClass:[NSString class]] ? [s copy] : nil;
     gNeedsRefresh = YES;
@@ -58,6 +62,12 @@ static void IPUpdate(UIView *host) {
                                (host.bounds.size.height * (1-gScale))/2 + gOffsetY,
                                host.bounds.size.width*gScale, host.bounds.size.height*gScale);
     overlay.hidden = NO;
+    overlay.layer.shadowColor = [UIColor cyanColor].CGColor;
+    overlay.layer.shadowOpacity = gGlowEnabled ? 0.85f : 0.0f;
+    overlay.layer.shadowRadius = gGlowRadius;
+    overlay.layer.shadowOffset = CGSizeZero;
+    overlay.layer.masksToBounds = NO;
+    overlay.clipsToBounds = NO;
     if (overlay.superview != host) [host addSubview:overlay];
 }
 static void (*originalLayout)(id,SEL);
