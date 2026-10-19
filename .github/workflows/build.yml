@@ -23,7 +23,8 @@ jobs:
             rm -rf "$HOME/theos/sdks"
             git clone --depth=1 https://github.com/theos/sdks.git "$HOME/theos/sdks" 2>&1 | tee -a build.log
           fi
-          find "$HOME/theos/sdks" -maxdepth 1 -name 'iPhoneOS*.sdk' -print
+          find "$HOME/theos/sdks" -maxdepth 1 -name 'iPhoneOS*.sdk' -print | tee -a build.log
+          test -n "$(find "$HOME/theos/sdks" -maxdepth 1 -name 'iPhoneOS*.sdk' -print -quit)"
       - name: Validate source and preferences
         run: |
           set -euo pipefail
@@ -38,6 +39,7 @@ jobs:
           set -o pipefail
           export PATH="/opt/homebrew/opt/make/libexec/gnubin:$PATH"
           make package FINALPACKAGE=1 messages=yes 2>&1 | tee -a build.log
+          test -n "$(find packages -maxdepth 1 -name '*.deb' -print -quit)"
       - name: Upload diagnostics
         if: always()
         uses: actions/upload-artifact@v4
