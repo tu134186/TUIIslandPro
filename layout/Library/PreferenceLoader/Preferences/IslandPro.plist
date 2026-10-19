@@ -1,0 +1,1 @@
+{ entry = { bundle = IslandProPrefs; cell = PSLinkCell; detail = IPRootListController; icon = ""; isController = 1; label = "灵动岛 Pro"; }; }
