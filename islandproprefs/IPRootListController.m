@@ -20,8 +20,15 @@ static NSString * const IPAssetPath = @"/var/mobile/Library/Preferences/com.tu.i
 - (void)setPreferenceValue:(id)value specifier:(PSSpecifier *)specifier {
     NSMutableDictionary *p = [[NSDictionary dictionaryWithContentsOfFile:IPPrefsPath] mutableCopy] ?: [NSMutableDictionary dictionary];
     NSString *key = [specifier propertyForKey:@"key"];
-    if (key && value) p[key] = value;
+    if (!key || !value) return;
+    if ([p[key] isEqual:value]) return;
+    p[key] = value;
     if ([p writeToFile:IPPrefsPath atomically:YES]) [self notifySpringBoard];
+    else {
+        UIAlertController *a = [UIAlertController alertControllerWithTitle:@"保存失败" message:@"无法写入插件设置，请检查存储空间与权限。" preferredStyle:UIAlertControllerStyleAlert];
+        [a addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil]];
+        [self presentViewController:a animated:YES completion:nil];
+    }
 }
 - (void)notifySpringBoard {
     CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), CFSTR("com.tu.islandpro/preferences.changed"), NULL, NULL, YES);
