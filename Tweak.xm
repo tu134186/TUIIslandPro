@@ -34,6 +34,8 @@ static void IPReload(void) {
     NSString *s = p[@"imagePath"];
     gImagePath = [s isKindOfClass:[NSString class]] ? [s copy] : nil;
     gNeedsRefresh = YES;
+    gCachedImage = nil;
+    gCachedPath = nil;
 }
 static UIImage *IPImage(void) {
     if (gImagePath.length == 0) { gCachedImage = nil; gCachedPath = nil; return nil; }
@@ -47,8 +49,12 @@ static UIImage *IPImage(void) {
     return gCachedImage;
 }
 static void IPUpdate(UIView *host) {
-    if (!host || host.bounds.size.width <= 0 || host.bounds.size.height <= 0) return;
+    if (!host) return;
     UIImageView *overlay = objc_getAssociatedObject(host, &kOverlayKey);
+    if (host.bounds.size.width <= 0 || host.bounds.size.height <= 0 || host.hidden || host.alpha <= 0.01) {
+        if (overlay) { overlay.hidden = YES; [overlay.layer removeAnimationForKey:@"ip.glow.pulse"]; }
+        return;
+    }
     if (!gEnabled || gImagePath.length == 0) { if (overlay) { overlay.hidden = YES; [overlay.layer removeAnimationForKey:@"ip.glow.pulse"]; } return; }
     UIImage *image = IPImage();
     if (!image) { if (overlay) { overlay.hidden = YES; [overlay.layer removeAnimationForKey:@"ip.glow.pulse"]; } return; }
@@ -67,7 +73,6 @@ static void IPUpdate(UIView *host) {
                                host.bounds.size.width*gScale, host.bounds.size.height*gScale);
     overlay.hidden = NO;
     overlay.layer.shadowColor = [UIColor cyanColor].CGColor;
-    overlay.layer.shadowPath = nil;
     overlay.layer.shadowOpacity = gGlowEnabled ? 0.85f : 0.0f;
     overlay.layer.shadowRadius = gGlowRadius;
     overlay.layer.shadowOffset = CGSizeZero;
