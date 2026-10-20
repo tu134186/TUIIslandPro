@@ -55,7 +55,7 @@ static UIImage *IPImage(void) {
 static void IPUpdate(UIView *host) {
     if (!host) return;
     UIImageView *overlay = objc_getAssociatedObject(host, &kOverlayKey);
-    if (host.bounds.size.width <= 0 || host.bounds.size.height <= 0 || host.hidden || host.alpha <= 0.01) {
+    if (!host.window || host.bounds.size.width <= 0 || host.bounds.size.height <= 0 || host.hidden || host.alpha <= 0.01) {
         if (overlay) { overlay.hidden = YES; [overlay.layer removeAnimationForKey:@"ip.glow.pulse"]; }
         return;
     }
