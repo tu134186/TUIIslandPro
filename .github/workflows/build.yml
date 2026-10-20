@@ -53,9 +53,96 @@ jobs:
             dpkg-deb --info "$deb" 2>&1 | tee -a build.log
             dpkg-deb --contents "$deb" 2>&1 | tee -a build.log
             contents="$(dpkg-deb --contents "$deb")"
-            grep -q 'IslandProPrefs.bundle/Root.plist' <<< "$contents"
-            grep -q 'IslandProPrefs.bundle/Info.plist' <<< "$contents"
-            grep -q 'IslandPro.dylib' <<< "$contents"
+            grep -Eq '^.*\./var/jb/Library/PreferenceBundles/IslandProPrefs.bundle/Root.plist
+            ls -lh "$deb" | tee -a build.log
+          done
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: IslandPro-Build-Logs
+          path: build.log
+          if-no-files-found: warn
+      - name: Upload DEB
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: IslandPro-DEB
+          path: packages/*.deb
+          if-no-files-found: error
+ <<< "$contents"
+            grep -Eq '^.*\./var/jb/Library/PreferenceBundles/IslandProPrefs.bundle/Info.plist
+            ls -lh "$deb" | tee -a build.log
+          done
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: IslandPro-Build-Logs
+          path: build.log
+          if-no-files-found: warn
+      - name: Upload DEB
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: IslandPro-DEB
+          path: packages/*.deb
+          if-no-files-found: error
+ <<< "$contents"
+            grep -Eq '^.*\./var/jb/Library/MobileSubstrate/DynamicLibraries/IslandPro.dylib
+            ls -lh "$deb" | tee -a build.log
+          done
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: IslandPro-Build-Logs
+          path: build.log
+          if-no-files-found: warn
+      - name: Upload DEB
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: IslandPro-DEB
+          path: packages/*.deb
+          if-no-files-found: error
+ <<< "$contents"
+            grep -Eq '^.*\./var/jb/Library/MobileSubstrate/DynamicLibraries/IslandPro.plist
+            ls -lh "$deb" | tee -a build.log
+          done
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: IslandPro-Build-Logs
+          path: build.log
+          if-no-files-found: warn
+      - name: Upload DEB
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: IslandPro-DEB
+          path: packages/*.deb
+          if-no-files-found: error
+ <<< "$contents"
+            grep -Eq '^.*\./var/jb/Library/PreferenceLoader/Preferences/IslandPro.plist
+            ls -lh "$deb" | tee -a build.log
+          done
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: IslandPro-Build-Logs
+          path: build.log
+          if-no-files-found: warn
+      - name: Upload DEB
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: IslandPro-DEB
+          path: packages/*.deb
+          if-no-files-found: error
+ <<< "$contents"
             ls -lh "$deb" | tee -a build.log
           done
       - name: Upload diagnostics
