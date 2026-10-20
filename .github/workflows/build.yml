@@ -44,8 +44,11 @@ jobs:
           set -euo pipefail
           export PATH="/opt/homebrew/opt/make/libexec/gnubin:$PATH"
           echo "Compiler: $(xcrun --find clang)" | tee -a build.log
+          echo "Xcode: $(xcode-select -p)" | tee -a build.log
           echo "SDK: $(xcrun --show-sdk-path --sdk iphoneos)" | tee -a build.log
           echo "Theos: $THEOS" | tee -a build.log
+          test -d "$(xcrun --show-sdk-path --sdk iphoneos)"
+          test -f "$THEOS/makefiles/common.mk"
           make clean 2>&1 | tee -a build.log
           make package FINALPACKAGE=1 messages=yes 2>&1 | tee -a build.log
           test -n "$(find packages -maxdepth 1 -name '*.deb' -print -quit)"
