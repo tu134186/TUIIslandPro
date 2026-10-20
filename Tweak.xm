@@ -136,31 +136,30 @@ static void IPInstallHookIfAvailable(void) {
     gHookInstalled = YES;
     NSLog(@"[IslandPro] Hook registered: SBSystemApertureContainerView layoutSubviews");
 }
+// A function-based retry avoids a block retaining itself across delayed callbacks.
+static void IPInstallHookRetry(NSUInteger attempt) {
+    if (gHookInstalled) return;
+    if (attempt >= 20) {
+        NSLog(@"[IslandPro] Hook unavailable after 20 startup retries");
+        return;
+    }
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)),
+                   dispatch_get_main_queue(), ^{
+        IPInstallHookIfAvailable();
+        if (!gHookInstalled) IPInstallHookRetry(attempt + 1);
+    });
+}
 __attribute__((constructor)) static void IPInit(void) {
     @autoreleasepool {
         IPReload();
         CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, IPNotification,
             CFSTR("com.tu.islandpro/preferences.changed"), NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
-        // The target class may not exist yet when SpringBoard loads the tweak.
-        // Retry a bounded number of times on the main queue, never double-hook.
         dispatch_async(dispatch_get_main_queue(), ^{
             IPInstallHookIfAvailable();
-            if (gHookInstalled) return;
-            __block NSUInteger attempts = 0;
-            __block void (^retry)(void) = nil;
-            retry = ^{
-                if (gHookInstalled) { retry = nil; return; }
-                IPInstallHookIfAvailable();
-                if (gHookInstalled || ++attempts >= 20) {
-                    if (!gHookInstalled) NSLog(@"[IslandPro] Hook unavailable after startup retries");
-                    retry = nil;
-                    return;
-                }
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)),
-                               dispatch_get_main_queue(), retry);
-            };
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)),
-                           dispatch_get_main_queue(), retry);
+            if (!gHookInstalled) {
+                NSLog(@"[IslandPro] Target class not yet available; scheduling bounded retry");
+                IPInstallHookRetry(0);
+            }
         });
     }
 }
