@@ -127,17 +127,40 @@ static void IPNotification(CFNotificationCenterRef center, void *observer, CFStr
         }
     });
 }
+static BOOL gHookInstalled = NO;
+static void IPInstallHookIfAvailable(void) {
+    if (gHookInstalled) return;
+    Class c = objc_getClass("SBSystemApertureContainerView");
+    if (!c || ![c instancesRespondToSelector:@selector(layoutSubviews)]) return;
+    MSHookMessageEx(c, @selector(layoutSubviews), (IMP)hookedLayout, (IMP *)&originalLayout);
+    gHookInstalled = YES;
+    NSLog(@"[IslandPro] Hook registered: SBSystemApertureContainerView layoutSubviews");
+}
 __attribute__((constructor)) static void IPInit(void) {
     @autoreleasepool {
         IPReload();
-        Class c = objc_getClass("SBSystemApertureContainerView");
-        if (c && [c instancesRespondToSelector:@selector(layoutSubviews)]) {
-            MSHookMessageEx(c, @selector(layoutSubviews), (IMP)hookedLayout, (IMP *)&originalLayout);
-            NSLog(@"[IslandPro] Hook installed: SBSystemApertureContainerView layoutSubviews");
-        } else {
-            NSLog(@"[IslandPro] Hook unavailable: SBSystemApertureContainerView not found or missing layoutSubviews");
-        }
         CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, IPNotification,
             CFSTR("com.tu.islandpro/preferences.changed"), NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
+        // The target class may not exist yet when SpringBoard loads the tweak.
+        // Retry a bounded number of times on the main queue, never double-hook.
+        dispatch_async(dispatch_get_main_queue(), ^{
+            IPInstallHookIfAvailable();
+            if (gHookInstalled) return;
+            __block NSUInteger attempts = 0;
+            __block void (^retry)(void) = nil;
+            retry = ^{
+                if (gHookInstalled) { retry = nil; return; }
+                IPInstallHookIfAvailable();
+                if (gHookInstalled || ++attempts >= 20) {
+                    if (!gHookInstalled) NSLog(@"[IslandPro] Hook unavailable after startup retries");
+                    retry = nil;
+                    return;
+                }
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)),
+                               dispatch_get_main_queue(), retry);
+            };
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)),
+                           dispatch_get_main_queue(), retry);
+        });
     }
 }
