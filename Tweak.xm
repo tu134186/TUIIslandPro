@@ -3,6 +3,7 @@
 #import <objc/runtime.h>
 #import <substrate.h>
 #import <CoreFoundation/CoreFoundation.h>
+#import <math.h>
 
 static NSString * const kPrefs = @"/var/mobile/Library/Preferences/com.tu.islandpro.plist";
 static NSString * const kAsset = @"/var/mobile/Library/Preferences/com.tu.islandpro.asset.png";
@@ -22,15 +23,21 @@ static NSString *gCachedPath;
 static BOOL gNeedsRefresh = YES;
 static BOOL gInsideLayoutHook = NO;
 
+static CGFloat IPClampedNumber(id value, CGFloat fallback, CGFloat minimum, CGFloat maximum) {
+    if (![value respondsToSelector:@selector(doubleValue)]) return fallback;
+    double number = [value doubleValue];
+    if (!isfinite(number)) return fallback;
+    return (CGFloat)fmax((double)minimum, fmin((double)maximum, number));
+}
 static void IPReload(void) {
     NSDictionary *p = [NSDictionary dictionaryWithContentsOfFile:kPrefs] ?: @{};
     gEnabled = [p[@"enabled"] boolValue];
-    gAlpha = p[@"opacity"] ? MAX(0.0, MIN(1.0, [p[@"opacity"] doubleValue])) : 1.0;
-    gScale = p[@"scale"] ? MAX(0.5, MIN(1.5, [p[@"scale"] doubleValue])) : 1.0;
-    gOffsetX = p[@"offsetX"] ? MAX(-80.0, MIN(80.0, [p[@"offsetX"] doubleValue])) : 0.0;
-    gOffsetY = p[@"offsetY"] ? MAX(-40.0, MIN(40.0, [p[@"offsetY"] doubleValue])) : 0.0;
+    gAlpha = IPClampedNumber(p[@"opacity"], 1.0, 0.0, 1.0);
+    gScale = IPClampedNumber(p[@"scale"], 1.0, 0.5, 1.5);
+    gOffsetX = IPClampedNumber(p[@"offsetX"], 0.0, -80.0, 80.0);
+    gOffsetY = IPClampedNumber(p[@"offsetY"], 0.0, -40.0, 40.0);
     gGlowEnabled = [p[@"glowEnabled"] boolValue];
-    gGlowRadius = p[@"glowRadius"] ? MAX(0.0, MIN(25.0, [p[@"glowRadius"] doubleValue])) : 8.0;
+    gGlowRadius = IPClampedNumber(p[@"glowRadius"], 8.0, 0.0, 25.0);
     gGlowPulse = [p[@"glowPulse"] boolValue];
     NSString *s = p[@"imagePath"];
     gImagePath = [s isKindOfClass:[NSString class]] ? [s copy] : nil;
