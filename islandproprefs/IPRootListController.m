@@ -34,6 +34,40 @@ static NSString * const IPAssetPath = @"/var/mobile/Library/Preferences/com.tu.i
 - (void)notifySpringBoard {
     CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), CFSTR("com.tu.islandpro/preferences.changed"), NULL, NULL, YES);
 }
+- (void)installTestMaterial {
+    // Generate a known-good, locally saved PNG to separate import problems
+    // from SpringBoard injection / SystemAperture host problems.
+    UIGraphicsBeginImageContextWithOptions(CGSizeMake(160, 80), NO, 2.0);
+    CGContextRef ctx = UIGraphicsGetCurrentContext();
+    [[UIColor colorWithRed:0.04 green:0.72 blue:0.96 alpha:1.0] setFill];
+    UIBezierPath *pill = [UIBezierPath bezierPathWithRoundedRect:CGRectMake(2, 2, 156, 76) cornerRadius:30];
+    [pill fill];
+    NSDictionary *attrs = @{NSFontAttributeName: [UIFont boldSystemFontOfSize:24],
+                            NSForegroundColorAttributeName: UIColor.whiteColor};
+    [@"ISLAND TEST" drawInRect:CGRectMake(9, 25, 145, 40) withAttributes:attrs];
+    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    NSData *png = UIImagePNGRepresentation(image);
+    NSString *path = [IPAssetPath stringByAppendingString:@".png"];
+    BOOL saved = png.length > 0 && [png writeToFile:path atomically:YES];
+    if (saved) {
+        NSMutableDictionary *prefs = [[NSDictionary dictionaryWithContentsOfFile:IPPrefsPath] mutableCopy] ?: [NSMutableDictionary dictionary];
+        prefs[@"imagePath"] = path;
+        prefs[@"enabled"] = @YES;
+        prefs[@"opacity"] = @1.0;
+        prefs[@"scale"] = @1.0;
+        saved = [prefs writeToFile:IPPrefsPath atomically:YES];
+        if (saved) {
+            [self notifySpringBoard];
+            [self reloadSpecifiers];
+        }
+    }
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:saved ? @"测试素材已保存" : @"测试素材保存失败"
+        message:saved ? @"已启用蓝色 ISLAND TEST 测试图。若灵动岛仍无变化，说明问题在 SpringBoard 注入或宿主挂载，不在图片导入。" : @"请检查偏好设置目录写入权限。"
+        preferredStyle:UIAlertControllerStyleAlert];
+    [alert addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil]];
+    [self presentViewController:alert animated:YES completion:nil];
+}
 - (void)chooseImage {
     UIDocumentPickerViewController *picker = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:@[UTTypeImage] asCopy:YES];
     picker.delegate = self;
