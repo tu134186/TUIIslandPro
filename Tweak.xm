@@ -109,7 +109,13 @@ static void IPUpdate(UIView *host) {
     }
     overlay.layer.masksToBounds = NO;
     overlay.clipsToBounds = NO;
-    if (overlay.superview != host) [host addSubview:overlay];
+    if (overlay.superview != host) {
+        [host addSubview:overlay];
+    } else if (host.subviews.lastObject != overlay) {
+        // SystemAperture may reorder its own subviews on a later layout pass.
+        // Keep the noninteractive material visible without recreating the view.
+        [host bringSubviewToFront:overlay];
+    }
 }
 static void (*originalLayout)(id,SEL);
 static void hookedLayout(id self, SEL cmd) {
