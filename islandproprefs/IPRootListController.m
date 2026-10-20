@@ -100,6 +100,9 @@ static NSString * const IPAssetPath = @"/var/mobile/Library/Preferences/com.tu.i
     }
     NSMutableDictionary *p = [[NSDictionary dictionaryWithContentsOfFile:IPPrefsPath] mutableCopy] ?: [NSMutableDictionary dictionary];
     p[@"imagePath"] = path;
+    // Importing a material should make it visible immediately; otherwise the
+    // default disabled switch makes a successful import appear to do nothing.
+    p[@"enabled"] = @YES;
     if (![p writeToFile:IPPrefsPath atomically:YES]) {
         UIAlertController *a = [UIAlertController alertControllerWithTitle:@"设置保存失败" message:@"素材已导入，但图片设置未保存。请检查存储权限。" preferredStyle:UIAlertControllerStyleAlert];
         [a addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil]];
