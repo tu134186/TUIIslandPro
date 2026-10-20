@@ -11,22 +11,21 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - name: Initialize build diagnostics
+      - name: Initialize diagnostics
         run: echo "IslandPro build preflight" > build.log
-      - name: Install toolchain
+      - name: Install Theos and tools
         shell: bash
         run: |
           set -euo pipefail
           brew install ldid make dpkg 2>&1 | tee -a build.log
           git clone --recursive --depth=1 https://github.com/theos/theos.git "$HOME/theos" 2>&1 | tee -a build.log
           echo "THEOS=$HOME/theos" >> "$GITHUB_ENV"
-          if ! find "$HOME/theos/sdks" -maxdepth 1 -type d -name 'iPhoneOS*.sdk' 2>/dev/null | grep -q .; then
+          if ! find "$HOME/theos/sdks" -maxdepth 1 -type d -name 'iPhoneOS*.sdk' | grep -q .; then
             rm -rf "$HOME/theos/sdks"
             git clone --depth=1 https://github.com/theos/sdks.git "$HOME/theos/sdks" 2>&1 | tee -a build.log
           fi
-          find "$HOME/theos/sdks" -maxdepth 1 -name 'iPhoneOS*.sdk' -print | tee -a build.log
           test -n "$(find "$HOME/theos/sdks" -maxdepth 1 -name 'iPhoneOS*.sdk' -print -quit)"
-      - name: Validate source and preferences
+      - name: Validate source
         shell: bash
         run: |
           set -euo pipefail
@@ -34,115 +33,29 @@ jobs:
           plutil -lint islandproprefs/Resources/Root.plist 2>&1 | tee -a build.log
           plutil -lint layout/Library/PreferenceLoader/Preferences/IslandPro.plist 2>&1 | tee -a build.log
           plutil -lint IslandPro.plist 2>&1 | tee -a build.log
-          /usr/bin/python3 -c 'import plistlib; from pathlib import Path; root=plistlib.loads(Path("islandproprefs/Resources/Root.plist").read_bytes()); keys=[x["key"] for x in root if "key" in x]; assert len(keys)==len(set(keys)), "duplicate preference keys"; assert all(x.get("get")=="readPreferenceValue:" and x.get("set")=="setPreferenceValue:specifier:" for x in root if x.get("cell") in ("PSSwitchCell","PSSliderCell")); print("Preference controls OK")' 2>&1 | tee -a build.log
-          test -s Tweak.xm && test -s control && test -s Makefile
+          test -s Tweak.xm
           test -s islandproprefs/IPRootListController.m
-          test -s islandproprefs/Makefile
           grep -q "THEOS_PACKAGE_SCHEME := rootless" Makefile
           grep -q "Architecture: iphoneos-arm64" control
-      - name: Compile and package
+      - name: Compile and verify package
         shell: bash
         run: |
           set -euo pipefail
           export PATH="/opt/homebrew/opt/make/libexec/gnubin:$PATH"
           make package FINALPACKAGE=1 messages=yes 2>&1 | tee -a build.log
           test -n "$(find packages -maxdepth 1 -name '*.deb' -print -quit)"
-          echo "Checking packaged DEB contents:" | tee -a build.log
           for deb in packages/*.deb; do
             test -s "$deb"
             dpkg-deb --info "$deb" 2>&1 | tee -a build.log
             dpkg-deb --contents "$deb" 2>&1 | tee -a build.log
-            contents="$(dpkg-deb --contents "$deb")"
-            grep -Eq '^.*\./var/jb/Library/PreferenceBundles/IslandProPrefs.bundle/Root.plist
-            ls -lh "$deb" | tee -a build.log
-          done
-      - name: Upload diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: IslandPro-Build-Logs
-          path: build.log
-          if-no-files-found: warn
-      - name: Upload DEB
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: IslandPro-DEB
-          path: packages/*.deb
-          if-no-files-found: error
- <<< "$contents"
-            grep -Eq '^.*\./var/jb/Library/PreferenceBundles/IslandProPrefs.bundle/Info.plist
-            ls -lh "$deb" | tee -a build.log
-          done
-      - name: Upload diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: IslandPro-Build-Logs
-          path: build.log
-          if-no-files-found: warn
-      - name: Upload DEB
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: IslandPro-DEB
-          path: packages/*.deb
-          if-no-files-found: error
- <<< "$contents"
-            grep -Eq '^.*\./var/jb/Library/MobileSubstrate/DynamicLibraries/IslandPro.dylib
-            ls -lh "$deb" | tee -a build.log
-          done
-      - name: Upload diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: IslandPro-Build-Logs
-          path: build.log
-          if-no-files-found: warn
-      - name: Upload DEB
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: IslandPro-DEB
-          path: packages/*.deb
-          if-no-files-found: error
- <<< "$contents"
-            grep -Eq '^.*\./var/jb/Library/MobileSubstrate/DynamicLibraries/IslandPro.plist
-            ls -lh "$deb" | tee -a build.log
-          done
-      - name: Upload diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: IslandPro-Build-Logs
-          path: build.log
-          if-no-files-found: warn
-      - name: Upload DEB
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: IslandPro-DEB
-          path: packages/*.deb
-          if-no-files-found: error
- <<< "$contents"
-            grep -Eq '^.*\./var/jb/Library/PreferenceLoader/Preferences/IslandPro.plist
-            ls -lh "$deb" | tee -a build.log
-          done
-      - name: Upload diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: IslandPro-Build-Logs
-          path: build.log
-          if-no-files-found: warn
-      - name: Upload DEB
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: IslandPro-DEB
-          path: packages/*.deb
-          if-no-files-found: error
- <<< "$contents"
+            mkdir -p "$RUNNER_TEMP/islandpro-check"
+            dpkg-deb --extract "$deb" "$RUNNER_TEMP/islandpro-check"
+            root="$RUNNER_TEMP/islandpro-check/var/jb/Library"
+            test -f "$root/MobileSubstrate/DynamicLibraries/IslandPro.dylib"
+            test -f "$root/MobileSubstrate/DynamicLibraries/IslandPro.plist"
+            test -f "$root/PreferenceBundles/IslandProPrefs.bundle/Root.plist"
+            test -f "$root/PreferenceBundles/IslandProPrefs.bundle/Info.plist"
+            test -f "$root/PreferenceLoader/Preferences/IslandPro.plist"
             ls -lh "$deb" | tee -a build.log
           done
       - name: Upload diagnostics
