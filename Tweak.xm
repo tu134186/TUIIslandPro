@@ -128,6 +128,16 @@ static void hookedLayout(id self, SEL cmd) {
         gInsideLayoutHook = NO;
     }
 }
+// A host can attach/detach without a fresh layout pass. Synchronize the
+// overlay at that lifecycle boundary so stale images do not linger.
+static void (*originalDidMoveToWindow)(id, SEL);
+static void hookedDidMoveToWindow(id self, SEL cmd) {
+    if (originalDidMoveToWindow) originalDidMoveToWindow(self, cmd);
+    UIView *host = (UIView *)self;
+    if (!gHosts) gHosts = [NSHashTable weakObjectsHashTable];
+    [gHosts addObject:host];
+    IPUpdate(host);
+}
 static void IPNotification(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo) {
     dispatch_async(dispatch_get_main_queue(), ^{
         IPReload();
@@ -144,6 +154,10 @@ static void IPInstallHookIfAvailable(void) {
     Class c = objc_getClass("SBSystemApertureContainerView");
     if (!c || ![c instancesRespondToSelector:@selector(layoutSubviews)]) return;
     MSHookMessageEx(c, @selector(layoutSubviews), (IMP)hookedLayout, (IMP *)&originalLayout);
+    if ([c instancesRespondToSelector:@selector(didMoveToWindow)]) {
+        MSHookMessageEx(c, @selector(didMoveToWindow), (IMP)hookedDidMoveToWindow,
+                        (IMP *)&originalDidMoveToWindow);
+    }
     gHookInstalled = YES;
     NSLog(@"[IslandPro] Hook registered: SBSystemApertureContainerView layoutSubviews");
 }
