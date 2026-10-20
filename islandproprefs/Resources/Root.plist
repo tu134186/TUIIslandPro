@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0"><array>
+<plist version="1.0"><dict><key>items</key><array>
 <dict><key>cell</key><string>PSGroupCell</string><key>label</key><string>基础设置 · 实验版</string></dict>
 <dict><key>cell</key><string>PSSwitchCell</string><key>get</key><string>readPreferenceValue:</string><key>set</key><string>setPreferenceValue:specifier:</string><key>label</key><string>启用自定义素材</string><key>key</key><string>enabled</string><key>default</key><false/></dict>
 <dict><key>cell</key><string>PSSliderCell</string><key>get</key><string>readPreferenceValue:</string><key>set</key><string>setPreferenceValue:specifier:</string><key>label</key><string>透明度</string><key>key</key><string>opacity</string><key>default</key><real>1</real><key>min</key><real>0</real><key>max</key><real>1</real></dict>
@@ -14,4 +14,4 @@
 <dict><key>cell</key><string>PSGroupCell</string><key>footerText</key><string>V1.0.0 实验版：支持文件选择静态图片。请勿与 ios16dao 同时启用。已加入实验性呼吸光晕；GIF/MP4、粒子光效及左右动画尚未实现。</string></dict>
 <dict><key>cell</key><string>PSButtonCell</string><key>label</key><string>从文件选择静态图片</string><key>action</key><string>chooseImage</string></dict>
 
-</array></plist>
+</array></dict></plist>
