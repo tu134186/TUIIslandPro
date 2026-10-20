@@ -124,8 +124,9 @@ static void hookedLayout(id self, SEL cmd) {
 static void IPNotification(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo) {
     dispatch_async(dispatch_get_main_queue(), ^{
         IPReload();
+        // Update detached hosts too: IPUpdate hides their existing overlays and
+        // stops animations; skipping them leaves stale presentation state behind.
         for (UIView *host in gHosts.allObjects) {
-            if (!host.window) continue;
             IPUpdate(host);
         }
     });
