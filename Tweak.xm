@@ -133,6 +133,9 @@ __attribute__((constructor)) static void IPInit(void) {
         Class c = objc_getClass("SBSystemApertureContainerView");
         if (c && [c instancesRespondToSelector:@selector(layoutSubviews)]) {
             MSHookMessageEx(c, @selector(layoutSubviews), (IMP)hookedLayout, (IMP *)&originalLayout);
+            NSLog(@"[IslandPro] Hook installed: SBSystemApertureContainerView layoutSubviews");
+        } else {
+            NSLog(@"[IslandPro] Hook unavailable: SBSystemApertureContainerView not found or missing layoutSubviews");
         }
         CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, IPNotification,
             CFSTR("com.tu.islandpro/preferences.changed"), NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
