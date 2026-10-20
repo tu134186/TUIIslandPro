@@ -38,7 +38,6 @@ static NSString * const IPAssetPath = @"/var/mobile/Library/Preferences/com.tu.i
     // Generate a known-good, locally saved PNG to separate import problems
     // from SpringBoard injection / SystemAperture host problems.
     UIGraphicsBeginImageContextWithOptions(CGSizeMake(160, 80), NO, 2.0);
-    CGContextRef ctx = UIGraphicsGetCurrentContext();
     [[UIColor colorWithRed:0.04 green:0.72 blue:0.96 alpha:1.0] setFill];
     UIBezierPath *pill = [UIBezierPath bezierPathWithRoundedRect:CGRectMake(2, 2, 156, 76) cornerRadius:30];
     [pill fill];
