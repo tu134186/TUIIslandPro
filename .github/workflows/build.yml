@@ -64,6 +64,12 @@ jobs:
             test -f "$root/PreferenceBundles/IslandProPrefs.bundle/Root.plist"
             test -f "$root/PreferenceBundles/IslandProPrefs.bundle/Info.plist"
             test -f "$root/PreferenceLoader/Preferences/IslandPro.plist"
+            test -s "$root/MobileSubstrate/DynamicLibraries/IslandPro.dylib"
+            test -s "$root/PreferenceBundles/IslandProPrefs.bundle/IslandProPrefs"
+            file "$root/MobileSubstrate/DynamicLibraries/IslandPro.dylib" | tee -a build.log
+            file "$root/PreferenceBundles/IslandProPrefs.bundle/IslandProPrefs" | tee -a build.log
+            lipo -archs "$root/MobileSubstrate/DynamicLibraries/IslandPro.dylib" | grep -qw arm64
+            lipo -archs "$root/PreferenceBundles/IslandProPrefs.bundle/IslandProPrefs" | grep -qw arm64
             echo "Rootless DEB payload verified" | tee -a build.log
             ls -lh "$deb" | tee -a build.log
           done
