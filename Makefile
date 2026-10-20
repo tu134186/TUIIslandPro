@@ -7,7 +7,7 @@ include $(THEOS)/makefiles/common.mk
 TWEAK_NAME = IslandPro
 IslandPro_FILES = Tweak.xm
 IslandPro_CFLAGS = -fobjc-arc
-IslandPro_FRAMEWORKS = UIKit Foundation QuartzCore
+IslandPro_FRAMEWORKS = UIKit Foundation QuartzCore CoreFoundation
 include $(THEOS_MAKE_PATH)/tweak.mk
 
 SUBPROJECTS += islandproprefs
