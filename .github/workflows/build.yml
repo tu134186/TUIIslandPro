@@ -73,6 +73,30 @@ jobs:
             echo "Rootless DEB payload verified" | tee -a build.log
             ls -lh "$deb" | tee -a build.log
           done
+      - name: Publish build result and failure excerpt
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## IslandPro Rootless Build"
+            echo
+            echo "- Commit: \`$GITHUB_SHA\`"
+            echo "- Job status: \`${{ job.status }}\`"
+            echo
+            if [ -f build.log ]; then
+              echo "### Recent errors"
+              echo '~~~text'
+              grep -Ei '(^|[[:space:]])(error:|fatal error:|make: \*\*\*|failed|not found)' build.log | tail -n 30 || true
+              echo '~~~'
+              echo
+              echo "### Last 35 log lines"
+              echo '~~~text'
+              tail -n 35 build.log
+              echo '~~~'
+            else
+              echo "No build.log was created."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload diagnostics
         if: always()
         uses: actions/upload-artifact@v4
