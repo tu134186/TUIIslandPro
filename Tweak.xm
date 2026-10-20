@@ -165,6 +165,20 @@ static void IPInstallHookIfAvailable(void) {
 static void IPInstallHookRetry(NSUInteger attempt) {
     if (gHookInstalled) return;
     if (attempt >= 20) {
+        // Identify which SystemAperture classes are actually present on-device.
+        // Do not hook guessed alternatives: log them for a safe, evidence-based fix.
+        const char *candidates[] = {
+            "SBSystemApertureContainerView",
+            "SBSystemApertureViewController",
+            "SBSystemApertureController",
+            "SAUIElementView",
+            "SBRecordingIndicatorViewController"
+        };
+        for (NSUInteger i = 0; i < sizeof(candidates)/sizeof(candidates[0]); i++) {
+            Class candidate = objc_getClass(candidates[i]);
+            NSLog(@"[IslandPro] Class probe %s: %@", candidates[i],
+                  candidate ? @"present" : @"missing");
+        }
         NSLog(@"[IslandPro] Hook unavailable after 20 startup retries");
         return;
     }
