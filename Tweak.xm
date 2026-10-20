@@ -106,8 +106,11 @@ static void IPUpdate(UIView *host) {
 }
 static void (*originalLayout)(id,SEL);
 static void hookedLayout(id self, SEL cmd) {
+    if (gInsideLayoutHook) {
+        if (originalLayout) originalLayout(self,cmd);
+        return;
+    }
     if (originalLayout) originalLayout(self,cmd);
-    if (gInsideLayoutHook) return;
     gInsideLayoutHook = YES;
     @try {
         UIView *host = (UIView *)self;
