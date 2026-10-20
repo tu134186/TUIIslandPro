@@ -56,6 +56,7 @@ jobs:
             test -f "$root/PreferenceBundles/IslandProPrefs.bundle/Root.plist"
             test -f "$root/PreferenceBundles/IslandProPrefs.bundle/Info.plist"
             test -f "$root/PreferenceLoader/Preferences/IslandPro.plist"
+            echo "Rootless DEB payload verified" | tee -a build.log
             ls -lh "$deb" | tee -a build.log
           done
       - name: Upload diagnostics
