@@ -12,6 +12,7 @@
 <dict><key>cell</key><string>PSSwitchCell</string><key>get</key><string>readPreferenceValue:</string><key>set</key><string>setPreferenceValue:specifier:</string><key>label</key><string>呼吸光效</string><key>key</key><string>glowPulse</string><key>default</key><false/></dict>
 <dict><key>cell</key><string>PSSliderCell</string><key>get</key><string>readPreferenceValue:</string><key>set</key><string>setPreferenceValue:specifier:</string><key>label</key><string>光晕半径</string><key>key</key><string>glowRadius</string><key>default</key><real>8</real><key>min</key><real>0</real><key>max</key><real>25</real></dict>
 <dict><key>cell</key><string>PSGroupCell</string><key>footerText</key><string>V1.0.0 实验版：支持文件选择静态图片。请勿与 ios16dao 同时启用。已加入实验性呼吸光晕；GIF/MP4、粒子光效及左右动画尚未实现。</string></dict>
+<dict><key>cell</key><string>PSButtonCell</string><key>label</key><string>一键加载蓝色测试素材</string><key>action</key><string>installTestMaterial</string></dict>
 <dict><key>cell</key><string>PSButtonCell</string><key>label</key><string>从文件选择静态图片</string><key>action</key><string>chooseImage</string></dict>
 
 </array></dict></plist>
