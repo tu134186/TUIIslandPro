@@ -28,7 +28,7 @@ static void IPStatus(NSString *status) {
     if (!status.length || [gLastStatus isEqualToString:status]) return;
     gLastStatus = [status copy];
     NSDictionary *record = @{@"status": status, @"time": @([[NSDate date] timeIntervalSince1970]),
-                             @"version": @"1.1.1"};
+                             @"version": @"1.1.2"};
     [record writeToFile:kStatusPath atomically:YES];
     NSLog(@"[IslandPro] status: %@", status);
 }
