@@ -119,19 +119,19 @@ static void IPUpdate(UIView *host) {
 }
 static void (*originalLayout)(id,SEL);
 static void hookedLayout(id self, SEL cmd) {
-    if (gInsideLayoutHook) {
-        if (originalLayout) originalLayout(self,cmd);
-        return;
-    }
-    if (originalLayout) originalLayout(self,cmd);
-    gInsideLayoutHook = YES;
+    // Preserve the original layout behavior, but avoid running our overlay
+    // update recursively when UIKit performs a nested layout.
+    BOOL nested = gInsideLayoutHook;
+    if (!nested) gInsideLayoutHook = YES;
     @try {
+        if (originalLayout) originalLayout(self,cmd);
+        if (nested) return;
         UIView *host = (UIView *)self;
         if (!gHosts) gHosts = [NSHashTable weakObjectsHashTable];
         [gHosts addObject:host];
         IPUpdate(host);
     } @finally {
-        gInsideLayoutHook = NO;
+        if (!nested) gInsideLayoutHook = NO;
     }
 }
 // A host can attach/detach without a fresh layout pass. Synchronize the
