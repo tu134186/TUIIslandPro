@@ -17,7 +17,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          brew install ldid make dpkg 2>&1 | tee -a build.log
+          brew install ldid make dpkg fakeroot 2>&1 | tee -a build.log
+          for tool in ldid dpkg-deb fakeroot; do command -v "$tool" | tee -a build.log; done
           git clone --recursive --depth=1 https://github.com/theos/theos.git "$HOME/theos" 2>&1 | tee -a build.log
           echo "THEOS=$HOME/theos" >> "$GITHUB_ENV"
           if ! find "$HOME/theos/sdks" -maxdepth 1 -type d -name 'iPhoneOS*.sdk' | grep -q .; then
