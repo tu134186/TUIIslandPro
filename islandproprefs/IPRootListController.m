@@ -47,8 +47,14 @@ static NSString * const IPAssetPath = @"/var/mobile/Library/Preferences/com.tu.i
     NSNumber *fileSize = nil;
     NSError *sizeError = nil;
     [url getResourceValue:&fileSize forKey:NSURLFileSizeKey error:&sizeError];
+    // Files providers do not always expose NSURLFileSizeKey for copied documents.
+    // Fall back to local file attributes before deciding whether it is safe to read.
+    if (!fileSize || sizeError) {
+        NSDictionary *attributes = [[NSFileManager defaultManager] attributesOfItemAtPath:url.path error:nil];
+        fileSize = attributes[NSFileSize];
+    }
     NSData *data = nil;
-    if (!sizeError && fileSize && fileSize.unsignedLongLongValue > 0 &&
+    if (fileSize && fileSize.unsignedLongLongValue > 0 &&
         fileSize.unsignedLongLongValue <= 20ULL * 1024ULL * 1024ULL) {
         data = [NSData dataWithContentsOfURL:url options:NSDataReadingMappedIfSafe error:nil];
     }
