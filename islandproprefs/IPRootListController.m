@@ -34,6 +34,21 @@ static NSString * const IPAssetPath = @"/var/mobile/Library/Preferences/com.tu.i
 - (void)notifySpringBoard {
     CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), CFSTR("com.tu.islandpro/preferences.changed"), NULL, NULL, YES);
 }
+- (void)showInjectionStatus {
+    NSString *path = @"/var/mobile/Library/Preferences/com.tu.islandpro.status.plist";
+    NSDictionary *record = [NSDictionary dictionaryWithContentsOfFile:path];
+    NSString *status = [record[@"status"] isKindOfClass:[NSString class]] ? record[@"status"] : nil;
+    NSNumber *time = [record[@"time"] isKindOfClass:[NSNumber class]] ? record[@"time"] : nil;
+    NSString *message = status ?: @"未找到 SpringBoard 运行记录。可能未注入、尚未重新启动 SpringBoard，或无法写入状态文件。";
+    if (time) {
+        NSDateFormatter *fmt = [[NSDateFormatter alloc] init];
+        fmt.dateFormat = @"MM-dd HH:mm:ss";
+        message = [message stringByAppendingFormat:@"\\n记录时间：%@", [fmt stringFromDate:[NSDate dateWithTimeIntervalSince1970:time.doubleValue]]];
+    }
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"灵动岛运行诊断" message:message preferredStyle:UIAlertControllerStyleAlert];
+    [alert addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil]];
+    [self presentViewController:alert animated:YES completion:nil];
+}
 - (void)installTestMaterial {
     // Generate a known-good, locally saved PNG to separate import problems
     // from SpringBoard injection / SystemAperture host problems.
