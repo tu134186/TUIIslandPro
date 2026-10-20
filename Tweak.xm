@@ -22,6 +22,17 @@ static UIImage *gCachedImage;
 static NSString *gCachedPath;
 static BOOL gNeedsRefresh = YES;
 static BOOL gInsideLayoutHook = NO;
+static NSString * const kStatusPath = @"/var/mobile/Library/Preferences/com.tu.islandpro.status.plist";
+static NSString *gLastStatus = nil;
+static void IPStatus(NSString *status) {
+    if (!status.length || [gLastStatus isEqualToString:status]) return;
+    gLastStatus = [status copy];
+    NSDictionary *record = @{@"status": status, @"time": @([[NSDate date] timeIntervalSince1970]),
+                             @"version": @"1.1.1"};
+    [record writeToFile:kStatusPath atomically:YES];
+    NSLog(@"[IslandPro] status: %@", status);
+}
+
 
 static CGFloat IPClampedNumber(id value, CGFloat fallback, CGFloat minimum, CGFloat maximum) {
     if (![value respondsToSelector:@selector(doubleValue)]) return fallback;
@@ -68,7 +79,7 @@ static void IPUpdate(UIView *host) {
     }
     if (!gEnabled || gImagePath.length == 0) { if (overlay) { overlay.hidden = YES; [overlay.layer removeAnimationForKey:@"ip.glow.pulse"]; } return; }
     UIImage *image = IPImage();
-    if (!image) { if (overlay) { overlay.hidden = YES; [overlay.layer removeAnimationForKey:@"ip.glow.pulse"]; } return; }
+    if (!image) { IPStatus(@"素材未加载：请检查路径与文件"); if (overlay) { overlay.hidden = YES; [overlay.layer removeAnimationForKey:@"ip.glow.pulse"]; } return; }
     if (!overlay) {
         overlay = [[UIImageView alloc] initWithFrame:CGRectZero];
         overlay.userInteractionEnabled = NO;
@@ -88,6 +99,7 @@ static void IPUpdate(UIView *host) {
                                (host.bounds.size.height - height)/2 + gOffsetY,
                                width, height);
     overlay.hidden = NO;
+    IPStatus(@"素材已挂载到 SystemAperture 宿主");
     overlay.layer.shadowColor = [UIColor cyanColor].CGColor;
     overlay.layer.shadowOpacity = gGlowEnabled ? 0.85f : 0.0f;
     overlay.layer.shadowRadius = gGlowRadius;
@@ -165,6 +177,7 @@ static void IPInstallHookIfAvailable(void) {
                         (IMP *)&originalDidMoveToWindow);
     }
     gHookInstalled = YES;
+    IPStatus(@"已找到并 Hook SystemAperture 容器");
     NSLog(@"[IslandPro] Hook registered: SBSystemApertureContainerView layoutSubviews");
 }
 // A function-based retry avoids a block retaining itself across delayed callbacks.
@@ -185,6 +198,7 @@ static void IPInstallHookRetry(NSUInteger attempt) {
             NSLog(@"[IslandPro] Class probe %s: %@", candidates[i],
                   candidate ? @"present" : @"missing");
         }
+        IPStatus(@"SpringBoard 已注入，但目标 SystemAperture 类未找到");
         NSLog(@"[IslandPro] Hook unavailable after 20 startup retries");
         return;
     }
@@ -197,6 +211,7 @@ static void IPInstallHookRetry(NSUInteger attempt) {
 __attribute__((constructor)) static void IPInit(void) {
     @autoreleasepool {
         IPReload();
+        IPStatus(@"已注入 SpringBoard，等待宿主初始化");
         CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, IPNotification,
             CFSTR("com.tu.islandpro/preferences.changed"), NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
         dispatch_async(dispatch_get_main_queue(), ^{
